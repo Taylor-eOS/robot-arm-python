@@ -9,7 +9,7 @@ def find_esp_port():
         return sorted(ports)[-1]
     raise Exception("No ESP32 port found—check dmesg.")
 
-def drain_responses(ser, timeout=0.5):
+def drain_responses(ser, timeout=0.4):
     end = time.time() + timeout
     while time.time() < end:
         while ser.in_waiting:
@@ -18,18 +18,6 @@ def drain_responses(ser, timeout=0.5):
                 print(f"ESP32: {line}")
         time.sleep(0.01)
 
-def wait_for_ready(ser, timeout=5.0):
-    end = time.time() + timeout
-    while time.time() < end:
-        if ser.in_waiting:
-            line = ser.readline().decode('utf-8', errors='ignore').strip()
-            if line:
-                print(f"ESP32: {line}")
-                if "Simple servo ready" in line:
-                    return True
-        time.sleep(0.01)
-    return False
-
 def main():
     try:
         PORT = find_esp_port()
@@ -37,11 +25,9 @@ def main():
         ser = serial.Serial(PORT, 115200, timeout=0.1)
         ser.dtr = False
         ser.rts = False
-        time.sleep(2)
+        time.sleep(0.1)
         ser.reset_input_buffer()
-        drain_responses(ser, timeout=0.5)
-        if not wait_for_ready(ser, timeout=5.0):
-            print("Warning, did not see ready banner, continuing anyway.")
+        drain_responses(ser, timeout=0.2)
         print("Ready. Enter angles or 'q' to quit. Prefix with 's' for smooth move.")
         while True:
             try:
